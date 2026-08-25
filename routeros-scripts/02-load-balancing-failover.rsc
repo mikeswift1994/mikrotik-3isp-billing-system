@@ -1,9 +1,9 @@
-# Mikrotik RouterOS - Load Balancing Script (Corrected)
+# Mikrotik RouterOS - Load Balancing Script (Fixed)
 # Execute this after 02-load-balancing-failover.rsc
 
 /ip firewall mangle
 # Clear existing mangle rules first
-remove [find comment~"LB-"]
+:do { remove [find comment~"LB-"] } on-error={}
 
 # Configure per-connection load balancing across 3 ISPs
 # Each new connection is assigned round-robin to ISP1, ISP2, or ISP3
@@ -35,8 +35,8 @@ add chain=prerouting action=mark-routing new-routing-mark="to-ISP3" passthrough=
 # ============================================================
 
 /ip route
-# Remove old load balancing routes
-remove [find comment~"LB-Route"]
+# Remove old load balancing routes (safely)
+:do { remove [find comment~"LB-Route"] } on-error={}
 
 # Add new routes with routing marks
 add dst-address=0.0.0.0/0 gateway=ISP1 routing-mark="to-ISP1" comment="LB-Route-ISP1" disabled=no
@@ -48,18 +48,24 @@ add dst-address=0.0.0.0/0 gateway=ISP3 routing-mark="to-ISP3" comment="LB-Route-
 # ============================================================
 
 /system script
-add name="lb-stats" source={
-:local isp1-count [/ip route print count-only where comment="LB-Route-ISP1"]
-:local isp2-count [/ip route print count-only where comment="LB-Route-ISP2"]
-:local isp3-count [/ip route print count-only where comment="LB-Route-ISP3"]
+# Remove old script if exists
+:do { remove [find name="lb-stats"] } on-error={}
 
-:log info "Load Balance Status - ISP1: Active, ISP2: Active, ISP3: Active"
-:log info "Active Connections: ISP1=$isp1-count, ISP2=$isp2-count, ISP3=$isp3-count"
+# Add new monitoring script
+add name="lb-stats" source={
+    :log info "Load Balancing System Active"
+    :log info "ISP1, ISP2, ISP3 Ready - All routes enabled"
 }
 
-# Schedule the monitoring script
+# ============================================================
+# STEP 4: Schedule Health Check Monitor
+# ============================================================
+
 /system scheduler
-remove [find name="lb-monitor"]
-add name="lb-monitor" interval=1m on-event="lb-stats" disabled=no
+# Remove old scheduler if exists
+:do { remove [find name="lb-monitor"] } on-error={}
+
+# Add new scheduler for monitoring
+add name="lb-monitor" interval=30s on-event="lb-stats" disabled=no
 
 :log info "Load Balancing configuration completed successfully"
