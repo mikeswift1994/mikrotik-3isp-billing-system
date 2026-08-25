@@ -1,0 +1,80 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+billing.db
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+*~
+*.old
+
+# RouterOS backups (if stored locally)
+*.backup
+backups/
+
+# Sensitive files
+config.local.js
+secrets.json
+
+# IDE
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+coverage/
+.nyc_output/
+
+# Development
+.dev
+*.dev
+
+# Docker
+docker-compose.override.yml
+
+# Package manager lock files (optional - uncomment if desired)
+# package-lock.json
+# yarn.lock
+
+# Session files
+sessions/
+*.session
