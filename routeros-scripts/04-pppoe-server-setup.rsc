@@ -1,96 +1,110 @@
-# Mikrotik RouterOS - PPPoE Server Configuration (FIXED)
+# Mikrotik RouterOS - PPPoE Server Configuration (CORRECTED)
 # Features: PPPoE profiles with speed limits (20/30/50/100/200/500 Mbps)
 # Note: Backend queues will enforce actual speeds for speedtest.net
 
 # ============================================================
-# STEP 1: Configure PPP Settings
-# ============================================================
-
-/ppp
-set max-packet-queue=100
-
-# ============================================================
-# STEP 2: Create PPP Profiles with Bandwidth Limits
+# STEP 1: Create PPP Profiles with Bandwidth Limits
 # ============================================================
 
 /ppp profile
-add name="ppp-20mbps" local-address=172.22.162.1 remote-address=172.22.162.100-172.22.162.150 comment="PPPoE Profile 20Mbps" disabled=no
-add name="ppp-30mbps" local-address=172.22.162.1 remote-address=172.22.162.151-172.22.162.200 comment="PPPoE Profile 30Mbps" disabled=no
-add name="ppp-50mbps" local-address=172.22.162.1 remote-address=172.22.162.201-172.22.162.225 comment="PPPoE Profile 50Mbps" disabled=no
-add name="ppp-100mbps" local-address=172.22.162.1 remote-address=172.22.162.226-172.22.162.240 comment="PPPoE Profile 100Mbps" disabled=no
-add name="ppp-200mbps" local-address=172.22.162.1 remote-address=172.22.162.241-172.22.162.247 comment="PPPoE Profile 200Mbps" disabled=no
-add name="ppp-500mbps" local-address=172.22.162.1 remote-address=172.22.162.248-172.22.162.254 comment="PPPoE Profile 500Mbps" disabled=no
+add name="ppp-20mbps" local-address=172.22.162.1 remote-address=172.22.162.100-172.22.162.150 comment="PPPoE Profile 20Mbps"
+add name="ppp-30mbps" local-address=172.22.162.1 remote-address=172.22.162.151-172.22.162.200 comment="PPPoE Profile 30Mbps"
+add name="ppp-50mbps" local-address=172.22.162.1 remote-address=172.22.162.201-172.22.162.225 comment="PPPoE Profile 50Mbps"
+add name="ppp-100mbps" local-address=172.22.162.1 remote-address=172.22.162.226-172.22.162.240 comment="PPPoE Profile 100Mbps"
+add name="ppp-200mbps" local-address=172.22.162.1 remote-address=172.22.162.241-172.22.162.247 comment="PPPoE Profile 200Mbps"
+add name="ppp-500mbps" local-address=172.22.162.1 remote-address=172.22.162.248-172.22.162.254 comment="PPPoE Profile 500Mbps"
 
 # ============================================================
-# STEP 3: Configure PPPoE Server Interface
+# STEP 2: Configure PPPoE Server Interface
 # ============================================================
 
 /interface pppoe-server
-add name=PPPoE-Server disabled=no
+# Interface may already exist, check first with /interface pppoe-server print
+# If it doesn't exist, add it:
+# add name=PPPoE-Server disabled=no
 
 # ============================================================
-# STEP 4: Configure PPPoE Server Settings
+# STEP 3: Configure PPPoE Server Settings
 # ============================================================
 
 /interface pppoe-server server
+reset
 set enabled=yes authentication=pap,chap default-profile=ppp-20mbps interface=PPPoE-Server
 
 # ============================================================
-# STEP 5: Create PPPoE Secrets (Users)
+# STEP 4: Create PPPoE Secrets (Users)
 # ============================================================
 
 /ppp secret
-add name="user1@20mbps" password="pass123" service=pppoe profile=ppp-20mbps disabled=no
-add name="user2@30mbps" password="pass123" service=pppoe profile=ppp-30mbps disabled=no
-add name="user3@50mbps" password="pass123" service=pppoe profile=ppp-50mbps disabled=no
-add name="user4@100mbps" password="pass123" service=pppoe profile=ppp-100mbps disabled=no
-add name="user5@200mbps" password="pass123" service=pppoe profile=ppp-200mbps disabled=no
-add name="user6@500mbps" password="pass123" service=pppoe profile=ppp-500mbps disabled=no
+# First clear existing secrets or add new ones
+add name="user1@20mbps" password="pass123" service=pppoe profile=ppp-20mbps
+add name="user2@30mbps" password="pass123" service=pppoe profile=ppp-30mbps
+add name="user3@50mbps" password="pass123" service=pppoe profile=ppp-50mbps
+add name="user4@100mbps" password="pass123" service=pppoe profile=ppp-100mbps
+add name="user5@200mbps" password="pass123" service=pppoe profile=ppp-200mbps
+add name="user6@500mbps" password="pass123" service=pppoe profile=ppp-500mbps
 
 # ============================================================
-# STEP 6: Configure Queue Trees for Speed Limiting
-# (This enforces the REAL speeds for speedtest.net)
+# STEP 5: Configure Queue Simple for Speed Limiting
+# (Alternative to Queue Tree - simpler and more reliable)
 # ============================================================
 
-/queue tree
-add name="queue-20mbps" parent=global-out packet-mark="pkt-20mbps" limit-at=20M max-limit=20M burst-limit=20M burst-time=5s priority=8 comment="Queue-20Mbps" disabled=no
-add name="queue-30mbps" parent=global-out packet-mark="pkt-30mbps" limit-at=30M max-limit=30M burst-limit=30M burst-time=5s priority=8 comment="Queue-30Mbps" disabled=no
-add name="queue-50mbps" parent=global-out packet-mark="pkt-50mbps" limit-at=50M max-limit=50M burst-limit=50M burst-time=5s priority=8 comment="Queue-50Mbps" disabled=no
-add name="queue-100mbps" parent=global-out packet-mark="pkt-100mbps" limit-at=100M max-limit=100M burst-limit=100M burst-time=5s priority=8 comment="Queue-100Mbps" disabled=no
-add name="queue-200mbps" parent=global-out packet-mark="pkt-200mbps" limit-at=200M max-limit=200M burst-limit=200M burst-time=5s priority=8 comment="Queue-200Mbps" disabled=no
-add name="queue-500mbps" parent=global-out packet-mark="pkt-500mbps" limit-at=500M max-limit=500M burst-limit=500M burst-time=5s priority=8 comment="Queue-500Mbps" disabled=no
+/queue simple
+# Remove old queues if they exist
+:do { remove [find comment~"Queue-"] } on-error={}
+
+# Add new simple queues for each speed tier
+add target=172.22.162.100-172.22.162.150 max-limit=20M/20M comment="Queue-20Mbps"
+add target=172.22.162.151-172.22.162.200 max-limit=30M/30M comment="Queue-30Mbps"
+add target=172.22.162.201-172.22.162.225 max-limit=50M/50M comment="Queue-50Mbps"
+add target=172.22.162.226-172.22.162.240 max-limit=100M/100M comment="Queue-100Mbps"
+add target=172.22.162.241-172.22.162.247 max-limit=200M/200M comment="Queue-200Mbps"
+add target=172.22.162.248-172.22.162.254 max-limit=500M/500M comment="Queue-500Mbps"
 
 # ============================================================
-# STEP 7: Mark Packets by User Profile
+# STEP 6: Mark Packets by User Profile (Optional)
 # ============================================================
 
 /ip firewall mangle
-add chain=postrouting action=mark-packet new-packet-mark="pkt-20mbps" passthrough=no src-address=172.22.162.100-172.22.162.150 comment="Mark-20Mbps" disabled=no
-add chain=postrouting action=mark-packet new-packet-mark="pkt-30mbps" passthrough=no src-address=172.22.162.151-172.22.162.200 comment="Mark-30Mbps" disabled=no
-add chain=postrouting action=mark-packet new-packet-mark="pkt-50mbps" passthrough=no src-address=172.22.162.201-172.22.162.225 comment="Mark-50Mbps" disabled=no
-add chain=postrouting action=mark-packet new-packet-mark="pkt-100mbps" passthrough=no src-address=172.22.162.226-172.22.162.240 comment="Mark-100Mbps" disabled=no
-add chain=postrouting action=mark-packet new-packet-mark="pkt-200mbps" passthrough=no src-address=172.22.162.241-172.22.162.247 comment="Mark-200Mbps" disabled=no
-add chain=postrouting action=mark-packet new-packet-mark="pkt-500mbps" passthrough=no src-address=172.22.162.248-172.22.162.254 comment="Mark-500Mbps" disabled=no
+# Remove old mangle rules
+:do { remove [find comment~"Mark-"] } on-error={}
+
+# Mark traffic from different user tiers for monitoring
+add chain=postrouting action=mark-packet new-packet-mark="pkt-20mbps" passthrough=no src-address=172.22.162.100-172.22.162.150 comment="Mark-20Mbps"
+add chain=postrouting action=mark-packet new-packet-mark="pkt-30mbps" passthrough=no src-address=172.22.162.151-172.22.162.200 comment="Mark-30Mbps"
+add chain=postrouting action=mark-packet new-packet-mark="pkt-50mbps" passthrough=no src-address=172.22.162.201-172.22.162.225 comment="Mark-50Mbps"
+add chain=postrouting action=mark-packet new-packet-mark="pkt-100mbps" passthrough=no src-address=172.22.162.226-172.22.162.240 comment="Mark-100Mbps"
+add chain=postrouting action=mark-packet new-packet-mark="pkt-200mbps" passthrough=no src-address=172.22.162.241-172.22.162.247 comment="Mark-200Mbps"
+add chain=postrouting action=mark-packet new-packet-mark="pkt-500mbps" passthrough=no src-address=172.22.162.248-172.22.162.254 comment="Mark-500Mbps"
 
 # ============================================================
-# STEP 8: Configure IP Address for PPPoE Server
+# STEP 7: Configure IP Address for PPPoE Server
 # ============================================================
 
 /ip address
-add address=172.22.162.1/24 interface=PPPoE-Server disabled=no comment="PPPoE-Server-Address"
+# Check if address already exists before adding
+:do { add address=172.22.162.1/24 interface=PPPoE-Server comment="PPPoE-Server-Address" } on-error={}
 
 # ============================================================
-# STEP 9: Configure DNS for PPPoE Clients
+# STEP 8: Configure DNS for PPPoE Clients
 # ============================================================
 
 /ip dns
-set servers=8.8.8.8,8.8.4.4 allow-remote-requests=yes
+set servers=8.8.8.8,8.8.4.4 allow-remote-requests=yes cache-size=2048 cache-max-ttl=1w
 
 # ============================================================
-# STEP 10: Enable PPP Logging
+# STEP 9: Enable PPP Logging
 # ============================================================
 
 /system logging
+:do { remove [find topics~"ppp"] } on-error={}
 add topics=ppp action=memory
 
-:log info "PPPoE Server configuration completed with 6 speed profiles"
+# ============================================================
+# STEP 10: Verify Configuration
+# ============================================================
+
+:log info "PPPoE Server configuration completed"
+:log info "Profiles created: 6 speed tiers (20/30/50/100/200/500 Mbps)"
+:log info "Server enabled: Check with /interface pppoe-server print"
+:log info "Test connection: telnet 172.22.162.1"
